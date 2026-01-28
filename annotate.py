@@ -27,6 +27,7 @@ LEFT_KEYCODE = 80
 UP_KEYCODE = 81
 DOWN_KEYCODE = 82
 S_KEYCODE = 22
+E_KEYCODE = 8
 
 MOUSE_BUTTON_MAP = {
     "left": "visible",
@@ -280,11 +281,12 @@ class SkeletonAnnotator(ImageAnnotator):
 
 class AnnotationApp(App):
 
-    def __init__(self, image_files, annotation_files, allow_editing):
+    def __init__(self, image_files, annotation_files, allow_editing, export_json_path=None):
         super().__init__()
         self.image_files = image_files
         self.annotation_files = annotation_files
         self.allow_editing = allow_editing
+        self.export_json_path = export_json_path
         self.index = 0
         
     def build(self):
@@ -311,6 +313,8 @@ class AnnotationApp(App):
             self.load()
         elif keycode == S_KEYCODE:
             self.cache_image()
+        elif keycode == E_KEYCODE:
+            self.export_all()
             
     def on_request_close(self, *args, **kwargs):
         if self.annotator.is_busy:
@@ -346,6 +350,32 @@ class AnnotationApp(App):
             with open(self.annotation_files[self.index], 'w') as file:
                 json.dump(data, file)
 
+    def export_all(self):
+        """Export all annotations into a single JSON file.
+
+        Output format: a list of records (one per image)
+        {"image": <image_path>, "annotation": <annotation_data or None>}
+
+        Press 'E' in the GUI to trigger.
+        """
+        if not self.export_json_path:
+            # Default to a file in the current working directory.
+            self.export_json_path = "annotations_export.json"
+
+        records = []
+        for img, ann in zip(self.image_files, self.annotation_files):
+            if os.path.exists(ann):
+                with open(ann, "r") as f:
+                    data = json.load(f)
+            else:
+                data = None
+            records.append({"image": img, "annotation": data})
+
+        with open(self.export_json_path, "w") as f:
+            json.dump(records, f)
+
+        print(f"Exported {len(records)} annotations to {self.export_json_path}")
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -359,6 +389,10 @@ if __name__ == '__main__':
     parser.add_argument(
         '--cached-only', action="store_true",
         help='only shows files which have been cached.'
+    )
+    parser.add_argument(
+        '--export-json', type=str, default=None,
+        help='path to export all annotations into a single JSON file (press E in the GUI).'
     )
     args = parser.parse_args()
 
@@ -379,5 +413,5 @@ if __name__ == '__main__':
 
     annotations = [i.split(".")[0] + ".json" for i in images]
 
-    AnnotationApp(images, annotations, not args.visualise_only).run()
+    AnnotationApp(images, annotations, not args.visualise_only, export_json_path=args.export_json).run()
     
