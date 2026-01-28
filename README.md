@@ -17,7 +17,19 @@ python annotate.py --image-glob "images/*.png" --visualise-only
 
 # Export annotations to a single JSON
 
-While the GUI is running, press **E** to export all per-image JSON annotations into one file.
+While the GUI is running, press **E** to export all annotations into one file.
+
+The export JSON contains per-image skeletons with 1-based vertex indices:
+
+```json
+{
+  "image": "...",
+  "skeletons": [
+    {"vertices": {"1": [x, y], "2": [x, y], "3": [x, y], "4": [x, y]}}
+  ]
+}
+```
+
 You can optionally set the output path:
 
 ```bash

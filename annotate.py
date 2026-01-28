@@ -354,7 +354,18 @@ class AnnotationApp(App):
         """Export all annotations into a single JSON file.
 
         Output format: a list of records (one per image)
-        {"image": <image_path>, "annotation": <annotation_data or None>}
+
+        {
+          "image": <image_path>,
+          "skeletons": [
+            {"vertices": {"1": [x,y], "2": [x,y], "3": [x,y], "4": [x,y]}}
+          ]
+        }
+
+        Notes:
+        - Vertex indices correspond to the internal node ordering (1-based).
+        - Coordinates are in image pixel coordinates.
+        - Missing vertices are exported as null.
 
         Press 'E' in the GUI to trigger.
         """
@@ -362,19 +373,29 @@ class AnnotationApp(App):
             # Default to a file in the current working directory.
             self.export_json_path = "annotations_export.json"
 
+        def to_vertices_dict(skeleton_data):
+            nodes = skeleton_data.get("nodes", [])
+            # Export first 4 vertices (the core tool vertices). Pad with None.
+            nodes = list(nodes)[:4]
+            while len(nodes) < 4:
+                nodes.append(None)
+            return {str(i + 1): nodes[i] for i in range(4)}
+
         records = []
         for img, ann in zip(self.image_files, self.annotation_files):
+            skeletons = []
             if os.path.exists(ann):
                 with open(ann, "r") as f:
                     data = json.load(f)
-            else:
-                data = None
-            records.append({"image": img, "annotation": data})
+                # `data` is a list of skeleton dicts
+                for sk in data:
+                    skeletons.append({"vertices": to_vertices_dict(sk)})
+            records.append({"image": img, "skeletons": skeletons})
 
         with open(self.export_json_path, "w") as f:
             json.dump(records, f)
 
-        print(f"Exported {len(records)} annotations to {self.export_json_path}")
+        print(f"Exported {len(records)} images to {self.export_json_path}")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
