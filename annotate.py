@@ -173,7 +173,7 @@ class Skeleton():
         self.edges = data['edges']
         
         # VERSION UPGRADE HANDLING
-        transition_sets = data['transitions']
+        transition_sets = data.get('transitions', [])
         self.transitions = []
         for transitions in transition_sets:
             if transitions == None or len(transitions) == 0:
@@ -182,6 +182,10 @@ class Skeleton():
                 self.transitions.append([transitions])
             else:
                 self.transitions.append(transitions)
+        
+        # If no transitions were loaded (e.g. old file), ensure we have empty lists for edges
+        while len(self.transitions) < len(self.edges):
+            self.transitions.append([])
     
     def get_data(self):
         return {'nodes': self.nodes, 'tags': self.tags, 'edges': self.edges, 'transitions': self.transitions}
@@ -447,19 +451,28 @@ class AnnotationApp(App):
         
         self.skel_annotator.set_image(self.image_files[self.index])
         self.skel_annotator.reset()
+        
+        self.loaded_successfully = True
         if os.path.exists(self.annotation_files[self.index]):
-            with open(self.annotation_files[self.index], 'r') as file:
-                data = json.load(file)
-            self.skel_annotator.set_data(data)
+            try:
+                with open(self.annotation_files[self.index], 'r') as file:
+                    data = json.load(file)
+                self.skel_annotator.set_data(data)
+            except Exception as e:
+                print(f"Error loading annotations from {self.annotation_files[self.index]}: {e}")
+                self.loaded_successfully = False
             
     def save(self):
-        if self.allow_editing:
-            data = self.skel_annotator.get_data()
-            with open(self.annotation_files[self.index], 'w') as file:
-                json.dump(data, file)
-                
-            seg = self.seg_annotator.get_data()
-            Image.fromarray(seg).save(self.segmentation_files[self.index])
+        if self.allow_editing and getattr(self, 'loaded_successfully', False):
+            try:
+                data = self.skel_annotator.get_data()
+                with open(self.annotation_files[self.index], 'w') as file:
+                    json.dump(data, file)
+                    
+                seg = self.seg_annotator.get_data()
+                Image.fromarray(seg).save(self.segmentation_files[self.index])
+            except Exception as e:
+                print(f"Error saving annotations: {e}")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
