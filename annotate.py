@@ -1,5 +1,7 @@
 import os
 import json
+import subprocess
+import sys
 os.environ['KIVY_NO_ARGS'] = '1'
 
 from kivy.config import Config
@@ -356,12 +358,50 @@ class AnnotationApp(App):
         self.revert_button.bind(on_press=lambda instance: self.seg_annotator.revert())
         self.revert_button.on_press()
         self.root.add_widget(self.revert_button)
+
+        self.video_button = Button(text="Open Video", size_hint=(0.1, 0.04), pos_hint={'right': 0.87, 'top': 0.98})
+        self.video_button.bind(on_press=self.open_video)
+        self.root.add_widget(self.video_button)
+
         self.root.add_widget(self.text)
         
         Window.bind(on_key_down=self.key_down)
         Window.bind(on_request_close=self.on_request_close)
         return self.root
     
+    def open_video(self, *args):
+        current_image = self.image_files[self.index]
+        # Look for video in current dir and parents
+        search_path = os.path.dirname(current_image)
+        video_extensions = ['.mp4', '.avi', '.mov', '.mkv']
+        video_path = None
+        
+        # Search up to 3 levels up
+        for _ in range(3):
+            if not os.path.exists(search_path):
+                break
+            for file in os.listdir(search_path):
+                if any(file.lower().endswith(ext) for ext in video_extensions):
+                    video_path = os.path.join(search_path, file)
+                    break
+            if video_path:
+                break
+            search_path = os.path.dirname(search_path)
+            
+        if video_path:
+            print(f"Opening video: {video_path}")
+            try:
+                if sys.platform == 'win32':
+                    os.startfile(video_path)
+                elif sys.platform == 'darwin':
+                    subprocess.call(('open', video_path))
+                else:
+                    subprocess.call(('xdg-open', video_path))
+            except Exception as e:
+                print(f"Error opening video: {e}")
+        else:
+            print("No video found.")
+
     def on_start(self):
         self.load()
 
