@@ -1,0 +1,31 @@
+{
+  "name": "tool-pose-gui",
+  "build": {
+    "dockerfile": "../Dockerfile",
+    "context": ".."
+  },
+  "containerEnv": {
+    "JUPYTER_CONFIG_DIR": "/tmp/.jupyter",
+    "JUPYTER_DATA_DIR": "/tmp/.local/share/jupyter",
+    "JUPYTER_RUNTIME_DIR": "/tmp/.local/share/jupyter/runtime"
+  },
+  "postStartCommand": "mkdir -p /tmp/.jupyter /tmp/.local/share/jupyter/runtime",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
+  "mounts": [
+    "type=bind,source=G:\\,target=/mnt/g"
+  ],
+  "workspaceFolder": "/workspace",
+  "runArgs": ["--gpus", "all"],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-toolsai.jupyter",
+        "openai.chatgpt"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python"
+      }
+    }
+  }
+}
