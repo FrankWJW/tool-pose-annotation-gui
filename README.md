@@ -24,15 +24,15 @@ Only two CLI arguments are supported:
 
 Example:
 ```bash
-python annotate_polygon.py --pairs-json G:\NeuroPPEYE\stage2_paired\pairs.json --mask-out G:\NeuroPPEYE\stage2_paired\
+python annotate_polygon.py --pairs-json G:\NeuroPPEYE\stage2_paired\pairs.json --mask-out G:\NeuroPPEYE\Stage 2 masks
 ```
 
 `--pairs-json` root handling:
 - Relative `ref/target` (or `white/blue`) paths are resolved from the parent folder of `pairs.json`.
 
 `--mask-out` handling:
-- If set to a parent folder (for example `...\stage2_paired\`), a `masks` subfolder is automatically used/created.
-- If set directly to a `masks` folder (for example `...\stage2_paired\masks`), that folder is used.
+- The exact provided path is used as the mask root (after path normalization).
+- No extra `masks` subfolder is appended automatically.
 
 ## `pairs.json` format
 The loader supports either schema:
